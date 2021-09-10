@@ -1,0 +1,13 @@
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\bin\Debug\Sonda_Agulha.exe.config
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\bin\Debug\Sonda_Agulha.exe
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\bin\Debug\Sonda_Agulha.pdb
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.csprojAssemblyReference.cache
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.Form1.resources
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.Properties.Resources.resources
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.csproj.GenerateResource.cache
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.csproj.CoreCompileInputs.cache
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.exe
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.pdb
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\bin\Debug\MathNet.Numerics.dll
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\bin\Debug\MathNet.Numerics.xml
+C:\Users\angio\OneDrive\Área de Trabalho\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.csproj.CopyComplete
