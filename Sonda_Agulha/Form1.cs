@@ -55,7 +55,14 @@ namespace Sonda_Agulha
                 if(i >= 10 && i < 40)
                 {
                     x.Add(i);
-                    y.Add(x[i]);
+                    if (i % 2 == 0)
+                    {
+                        y.Add(5*x[i]);
+                    }
+                    else
+                    {
+                        y.Add(6 * x[i]);
+                    }                   
                 }
 
                 if(i >= 40)
@@ -110,6 +117,7 @@ namespace Sonda_Agulha
             }
         }
 
+        //É executado quando o Arduino manda algo pela Serial
         private void serialPort1_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
 
@@ -226,6 +234,7 @@ namespace Sonda_Agulha
             }
         }
 
+        //Manda o arduino iniciar o aquecimento
         private void btnInit_Click(object sender, EventArgs e)
         {
             serialPort1.Write("Iniciar");
@@ -260,6 +269,12 @@ namespace Sonda_Agulha
             var dydx = Derivate(x.ToArray(), y.ToArray());
             var d2ydx = Derivate(x.ToArray(), dydx);
 
+            //Plota a derivada 2
+            for (int i = 0; i < x.Count(); i++)
+            {
+                chart1.Series[1].Points.AddXY(x[i], d2ydx[i]);
+            }
+
             //Assigna os valores da parte linear da curva aos vetores
             for (int i = 0; i < x.Count(); i++)
             {
@@ -270,6 +285,27 @@ namespace Sonda_Agulha
                 }
             }
 
+            //Faz a regressão linear da parte linear da curva. b + mx ==> b = tuple.1 e m = tuple.2
+            Tuple<double, double> linear_regression = MathNet.Numerics.Fit.Line(xLin.ToArray(), yLin.ToArray());
+            double b = linear_regression.Item1;
+            double m = linear_regression.Item2;
+            
+            tBox_m.Text = m.ToString();
+
+            //Adiciona a reta aproximada ao gráfico. Acima de zero para limitar
+            double y_lin;
+            for (int i = 0; i < x.Count(); i++)
+            {
+                if ((y_lin = b + m * x[i]) > 0)
+                {
+                    chart1.Series[2].Points.AddXY(x[i], y_lin);
+                }
+            }
+
+            //Deixa a curva linear pontilhada
+            chart1.Series[2].BorderDashStyle = System.Windows.Forms.DataVisualization.Charting.ChartDashStyle.Dash;
+
+            /*
             //Cria um objeto "LinearSpline" da parte linear
             var ls = MathNet.Numerics.Interpolation.LinearSpline.Interpolate(xLin, yLin);
 
@@ -280,8 +316,11 @@ namespace Sonda_Agulha
                 chart1.Series[2].Points.AddXY(x[i], yInterpolated[i]);
             }
 
-            //Deixa a curva linear pontilhada
-            chart1.Series[2].BorderDashStyle = System.Windows.Forms.DataVisualization.Charting.ChartDashStyle.Dash;
+            //Calcula a inclinação da parte linear da curva
+            int linear_size = yInterpolated.Count() - 1;
+            tBox_m.Text = ((yInterpolated[linear_size] - yInterpolated[0]) / (x[linear_size] - x[0])).ToString();*/
+
+
         }
     }
 }
