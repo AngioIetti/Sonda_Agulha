@@ -23,12 +23,10 @@ namespace Sonda_Agulha
         int ports_length; //Armazena o número de portas disponíveis
 
         string dataIn; //Dado recebido do arduino
-        int cont_plot = -1; //Marca o "tempo" para plotar
+        int cont_plot = 0; //Marca o "tempo" para plotar
 
         List<double> x = new List<double>();
         List<double> y = new List<double>();
-
-        double x1, x2;
 
         public Form1()
         {
@@ -75,7 +73,8 @@ namespace Sonda_Agulha
                 chart1.Series[0].BorderWidth = 2;
             }
 
-            Calcula_inclinacao();
+            var points = Find_Linear_Interval();
+            Calculate_slope(points.Item1, points.Item2);
 
             //Algumas configurações para ser possível a seleção manual
             chart1.ChartAreas[0].CursorX.IsUserEnabled = false;         // red cursor at SelectionEnd
@@ -83,21 +82,6 @@ namespace Sonda_Agulha
             chart1.ChartAreas[0].AxisX.ScaleView.Zoomable = false;      // zoom into SelectedRange
             chart1.ChartAreas[0].AxisX.ScrollBar.IsPositionedInside = true;
             chart1.ChartAreas[0].CursorX.Interval = 1;               // set "resolution" of CursorX
-            
-        }
-
-        private double[] Derivate(double[] x, double[] y)
-        {
-            var l = x.Length;
-            double[] dydx = new double[l];
-            var cs = MathNet.Numerics.Interpolation.CubicSpline.InterpolateNatural(x, y);
-
-            for (int i = 0; i < x.Length; i++)
-            {
-                dydx[i] = cs.Differentiate(x[i]);
-            }
-
-            return dydx;
         }
 
         private bool Show_connection_error(string message)
@@ -137,7 +121,7 @@ namespace Sonda_Agulha
                 }
                 else if (dataIn == "Fim")
                 {
-                    Calcula_inclinacao();
+                    var points = Find_Linear_Interval();
                 }
             }
 
@@ -240,56 +224,92 @@ namespace Sonda_Agulha
             serialPort1.Write("Iniciar");
         }
 
-        private void chart1_SelectionRangeChanged(object sender, System.Windows.Forms.DataVisualization.Charting.CursorEventArgs e)
+        //Pega os valores inicial e final de seleção e coloca nas tBox
+        private void chart1_SelectionRangeChanging(object sender, System.Windows.Forms.DataVisualization.Charting.CursorEventArgs e)
         {
-            x1 = e.NewSelectionStart; // or: chart1.ChartAreas[0].CursorX.SelectionStart;
-            x2 = e.NewSelectionEnd;        // or: x2 = chart1.ChartAreas[0].CursorX.SelectionEnd;
+            double start = chart1.ChartAreas[0].CursorX.SelectionStart;
+            double end = chart1.ChartAreas[0].CursorX.SelectionEnd;
 
-            Console.Write("x1 = ");
-            Console.WriteLine(x1);
-            Console.Write("x2 = ");
-            Console.WriteLine(x2);
-
-            var a = chart1.Series.Select(series => series.Points.Where(point => point.XValue == x1).ToList()).ToList();
-
-            var arr = a[0].ToArray();
-
-            Console.WriteLine(arr[0].YValues.ToString());
+            if(start > end)
+            {
+                tBoxInit.Text = end.ToString();
+                tBoxFin.Text = start.ToString();
+            }
+            else
+            {
+                tBoxInit.Text = start.ToString();
+                tBoxFin.Text = end.ToString();
+            }
 
         }
 
-        void Calcula_inclinacao()
+        private void chart1_SelectionRangeChanged(object sender, System.Windows.Forms.DataVisualization.Charting.CursorEventArgs e)
         {
-            //Guardam a parte linear da curva
             List<double> xLin = new List<double>();
             List<double> yLin = new List<double>();
-            List<double> yInterpolated = new List<double>();  //Guarda os valores interpolados da parte linear da curva
 
-            //Calcula a primeira e segunda derivada
-            var dydx = Derivate(x.ToArray(), y.ToArray());
-            var d2ydx = Derivate(x.ToArray(), dydx);
+            int start = int.Parse(tBoxInit.Text);
+            int end = int.Parse(tBoxFin.Text);
+            bool notEqual = start != end;
 
-            //Plota a derivada 2
-            for (int i = 0; i < x.Count(); i++)
+            for (int i = start; i <= end ; i++)
             {
-                chart1.Series[1].Points.AddXY(x[i], d2ydx[i]);
-            }
-
-            //Assigna os valores da parte linear da curva aos vetores
-            for (int i = 0; i < x.Count(); i++)
-            {
-                if (d2ydx[i] < 0.1 && d2ydx[i] > -0.1)
+                if (notEqual)
                 {
                     xLin.Add(x[i]);
                     yLin.Add(y[i]);
                 }
             }
 
+            if(notEqual)
+            {
+                Calculate_slope(xLin.ToArray(), yLin.ToArray());
+            }           
+
+        }
+
+        //Faz os calculos para a seleção manual
+        private void btnCalcLine_Click(object sender, EventArgs e)
+        {
+           // Calculate_slope(int.Parse(tBoxInit.Text), int.Parse(tBoxFin.Text));
+        }
+
+        private Tuple<double[], double[]> Find_Linear_Interval()
+        {
+            List<double> xLin = new List<double>();
+            List<double> yLin = new List<double>();
+
+            //Calcula a primeira e segunda derivada
+            var dydx = Derivate(x.ToArray(), y.ToArray());
+            var d2ydx = Derivate(x.ToArray(), dydx);
+
+            //Encontra os pontos do intervalo linear
+            //Pode mudar ainda essa parte, não sei se funciona para todos os casos
+
+            for (int i = 0; i < x.Count(); i++)
+            {
+                if(d2ydx[i] < 0.1 && d2ydx[i] > -0.1) 
+                {
+                    xLin.Add(x[i]);
+                    yLin.Add(y[i]);
+                }
+            }
+
+            return Tuple.Create(xLin.ToArray(), yLin.ToArray());
+        }
+
+        void Calculate_slope(double[] xLin, double[] yLin)
+        {
+
             //Faz a regressão linear da parte linear da curva. b + mx ==> b = tuple.1 e m = tuple.2
-            Tuple<double, double> linear_regression = MathNet.Numerics.Fit.Line(xLin.ToArray(), yLin.ToArray());
+            Tuple<double, double> linear_regression = MathNet.Numerics.Fit.Line(xLin, yLin);
             double b = linear_regression.Item1;
             double m = linear_regression.Item2;
-            
+
+            //Apaga a reta anterior
+            chart1.Series[2].Points.Clear();
+
+            //Escreve na tBox
             tBox_m.Text = m.ToString();
 
             //Adiciona a reta aproximada ao gráfico. Acima de zero para limitar
@@ -305,22 +325,21 @@ namespace Sonda_Agulha
             //Deixa a curva linear pontilhada
             chart1.Series[2].BorderDashStyle = System.Windows.Forms.DataVisualization.Charting.ChartDashStyle.Dash;
 
-            /*
-            //Cria um objeto "LinearSpline" da parte linear
-            var ls = MathNet.Numerics.Interpolation.LinearSpline.Interpolate(xLin, yLin);
+        }
 
-            //Interpola a parte linear e plota
-            for (int i = 0; i < x.Count(); i++)
+        private double[] Derivate(double[] x, double[] y)
+        {
+            var l = x.Length;
+            double[] dydx = new double[l];
+            var cs = MathNet.Numerics.Interpolation.CubicSpline.InterpolateNatural(x, y);
+
+            for (int i = 0; i < x.Length; i++)
             {
-                yInterpolated.Add(ls.Interpolate(x[i]));
-                chart1.Series[2].Points.AddXY(x[i], yInterpolated[i]);
+                dydx[i] = cs.Differentiate(x[i]);
             }
 
-            //Calcula a inclinação da parte linear da curva
-            int linear_size = yInterpolated.Count() - 1;
-            tBox_m.Text = ((yInterpolated[linear_size] - yInterpolated[0]) / (x[linear_size] - x[0])).ToString();*/
-
-
+            return dydx;
         }
+
     }
 }
