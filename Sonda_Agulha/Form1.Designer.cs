@@ -46,6 +46,7 @@ namespace Sonda_Agulha
             this.tBoxFin = new System.Windows.Forms.TextBox();
             this.tBoxInit = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.btnStop = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -59,7 +60,7 @@ namespace Sonda_Agulha
             this.chart1.Location = new System.Drawing.Point(466, 12);
             this.chart1.Name = "chart1";
             series1.ChartArea = "ChartArea1";
-            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Point;
             series1.Legend = "Legend1";
             series1.Name = "Função";
             series2.ChartArea = "ChartArea1";
@@ -81,7 +82,12 @@ namespace Sonda_Agulha
             // 
             // timerPortas
             // 
+            this.timerPortas.Interval = 3000;
             this.timerPortas.Tick += new System.EventHandler(this.timerPortas_Tick);
+            // 
+            // serialPort1
+            // 
+            this.serialPort1.DataReceived += new System.IO.Ports.SerialDataReceivedEventHandler(this.serialPort1_DataReceived);
             // 
             // btnInit
             // 
@@ -154,11 +160,22 @@ namespace Sonda_Agulha
             this.label2.TabIndex = 0;
             this.label2.Text = "Inicial";
             // 
+            // btnStop
+            // 
+            this.btnStop.Location = new System.Drawing.Point(26, 57);
+            this.btnStop.Name = "btnStop";
+            this.btnStop.Size = new System.Drawing.Size(75, 23);
+            this.btnStop.TabIndex = 5;
+            this.btnStop.Text = "Parar";
+            this.btnStop.UseVisualStyleBackColor = true;
+            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1159, 450);
+            this.Controls.Add(this.btnStop);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.tBox_m);
@@ -187,6 +204,7 @@ namespace Sonda_Agulha
         private System.Windows.Forms.TextBox tBoxFin;
         private System.Windows.Forms.TextBox tBoxInit;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Button btnStop;
     }
 }
 

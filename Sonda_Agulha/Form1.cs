@@ -16,6 +16,7 @@ namespace Sonda_Agulha
 {
     public partial class Form1 : Form
     {
+
         int cont_portas = 0; //Controla em qual porta será tentada a conexão
         int cont_tentativas = 0; //Controla o número de tentativas de conexão
         bool connected = false; //É true quando o arduino responde com um "Connected"
@@ -47,7 +48,7 @@ namespace Sonda_Agulha
                 if(i < 10)
                 {
                     x.Add(i);
-                    y.Add(x[i]*x[i]*x[i]);
+                    y.Add(x[i]*x[i]);
                 }
                 
                 if(i >= 10 && i < 40)
@@ -82,80 +83,17 @@ namespace Sonda_Agulha
             chart1.ChartAreas[0].AxisX.ScaleView.Zoomable = false;      // zoom into SelectedRange
             chart1.ChartAreas[0].AxisX.ScrollBar.IsPositionedInside = true;
             chart1.ChartAreas[0].CursorX.Interval = 1;               // set "resolution" of CursorX
-        }
 
-        private bool Show_connection_error(string message)
-        {
+            //Configurações da Serial
+            serialPort1.BaudRate = 9600;
+            serialPort1.DataBits = 8;
+            serialPort1.StopBits = StopBits.One;
+            serialPort1.Parity = Parity.None;
+
             timerPortas.Enabled = false;
-            DialogResult result = MessageBox.Show(message, "Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
-
-            if (result == DialogResult.Retry)
-            {
-                timerPortas.Enabled = true;
-                return true;
-            }
-            else
-            {
-                Environment.Exit(1);
-                return false;
-            }
         }
 
-        //É executado quando o Arduino manda algo pela Serial
-        private void serialPort1_DataReceived(object sender, SerialDataReceivedEventArgs e)
-        {
-
-            dataIn = serialPort1.ReadLine(); //Armazena o dado recebido
-
-            //Se ainda não está conectado, verifica se o dado recebido é a palavra "Connected" que deve ser mandada pelo arduino quando a conexão é requisitada
-            //É colocado o limite de tamanho pois o Arduino também estará mandando outros dados
-            if (!connected && dataIn.Length < 11)
-            {
-                dataIn = dataIn.Remove(dataIn.Length - 1); //Remove o ultimo char porque é vazio
-
-                //Se o Arduino mandou a palavra correta, passa a bool connected para true, e a rotina de plotar dados será executada quando chegar um novo dado
-                if (dataIn == "Connected")
-                {
-                    connected = true;
-                    timerPortas.Enabled = false; //Desabilita o timer de conexão de portas
-                }
-                else if (dataIn == "Fim")
-                {
-                    var points = Find_Linear_Interval();
-                }
-            }
-
-            else if (connected)
-            {
-                Plot_data(double.Parse(dataIn));
-                y.Add(double.Parse(dataIn));
-                x.Add(cont_plot);
-                cont_plot++;
-            }
-        }
-
-        //Os dados recebidos são executados na thread da serialPort1 e os métodos de plotar, escrever nas textboxes, etc. em outra thread.
-        //É necessário o método "delegate" e "CallBack" que garante que a função será executada em seu thread
-        //O thread do chart1 e textboxes é o mesmo, então são chamados na mesma função
-
-        delegate void Plot_dataCallback(double value); //Declara o método do delegate da função Plot_data
-
-
-        //Método para plotar dados e escrever nas textBox
-        private void Plot_data(double value)
-        {
-            if (this.chart1.InvokeRequired) //Verifica se o thread do chart1 é diferente do thread atual. Se sim, retorna true
-            {
-                Plot_dataCallback d = new Plot_dataCallback(Plot_data); //Cria o método delegate e armazena na variável d
-                this.BeginInvoke(d, new object[] { value }); //Invoca esta mesma função Plot_data mas agora no thread do chart1. Com isto o InvokeRequired retornará false                
-            }
-            else
-            {
-                //Plota o gráfico
-                this.chart1.Series[0].Points.AddXY(cont_plot, value);
-            }
-        }
-
+        //Encontra e conecta automaticamente ao Arduino
         private void timerPortas_Tick(object sender, EventArgs e)
         {
             //Se a porta serial está aberta tenta mandar a mensagem de conexão 5 vezes
@@ -193,7 +131,7 @@ namespace Sonda_Agulha
 
                 }
 
-                else if (cont_portas == ports_length)
+                if (cont_portas == ports_length)
                 {
                     cont_portas = 0;
 
@@ -215,13 +153,85 @@ namespace Sonda_Agulha
                 }
 
                 cont_portas++;
+
             }
         }
 
-        //Manda o arduino iniciar o aquecimento
+        //É executado quando o Arduino manda algo pela Serial
+        private void serialPort1_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            dataIn = serialPort1.ReadLine(); //Armazena o dado recebido
+
+            //Se ainda não está conectado, verifica se o dado recebido é a palavra "Connected" que deve ser mandada pelo arduino quando a conexão é requisitada
+            //É colocado o limite de tamanho pois o Arduino também estará mandando outros dados
+            if (!connected && dataIn.Length < 11)
+            {
+                dataIn = dataIn.Remove(dataIn.Length - 1); //Remove o ultimo char porque é vazio
+
+                //Se o Arduino mandou a palavra correta, passa a bool connected para true, e a rotina de plotar dados será executada quando chegar um novo dado
+                if (dataIn == "Connected")
+                {
+                    connected = true;
+                    timerPortas.Enabled = false; //Desabilita o timer de conexão de portas
+                }
+            }
+
+            else if (connected)
+            {
+                //Quando terminar a aquisição de dados o Arduino mandará um "fim" e será calculada automaticamente e região Linear
+                //Se não, armazena e plota os dados
+
+                if (dataIn == "Fim")
+                {
+                    var points = Find_Linear_Interval();
+                    Calculate_slope(points.Item1, points.Item2);
+                }
+                else
+                {
+                    double yln = Math.Log(double.Parse(dataIn));
+                    Plot_data(yln);
+                    y.Add(yln);
+                    x.Add(cont_plot);
+                    cont_plot++;
+                }
+            }
+        }
+
+        //Os dados recebidos são executados na thread da serialPort1 e os métodos de plotar, escrever nas textboxes, etc. em outra thread.
+        //É necessário o método "delegate" e "CallBack" que garante que a função será executada em seu thread
+        //O thread do chart1 e textboxes é o mesmo, então são chamados na mesma função
+
+        delegate void Plot_dataCallback(double value); //Declara o método do delegate da função Plot_data
+
+
+        //Método para plotar dados e escrever nas textBox
+        private void Plot_data(double value)
+        {
+            if (this.chart1.InvokeRequired) //Verifica se o thread do chart1 é diferente do thread atual. Se sim, retorna true
+            {
+                Plot_dataCallback d = new Plot_dataCallback(Plot_data); //Cria o método delegate e armazena na variável d
+                this.BeginInvoke(d, new object[] { value }); //Invoca esta mesma função Plot_data mas agora no thread do chart1. Com isto o InvokeRequired retornará false                
+            }
+            else
+            {
+                //Plota o gráfico
+                this.chart1.Series[0].Points.AddXY(cont_plot, value);
+            }
+        }
+
+
+        //Manda o arduino iniciar o aquecimento e aquisição
         private void btnInit_Click(object sender, EventArgs e)
         {
-            serialPort1.Write("Iniciar");
+            serialPort1.WriteLine("Start");
+        }
+
+        //Para o aquecimento e aquisição e calcula a inclinação
+        private void btnStop_Click(object sender, EventArgs e)
+        {
+            serialPort1.WriteLine("Stop");
+            var points = Find_Linear_Interval();
+            Calculate_slope(points.Item1, points.Item2);
         }
 
         //Pega os valores inicial e final de seleção e coloca nas tBox
@@ -248,23 +258,24 @@ namespace Sonda_Agulha
             List<double> xLin = new List<double>();
             List<double> yLin = new List<double>();
 
-            int start = int.Parse(tBoxInit.Text);
-            int end = int.Parse(tBoxFin.Text);
-            bool notEqual = start != end;
-
-            for (int i = start; i <= end ; i++)
+            if (int.TryParse(tBoxInit.Text, out int start) && int.TryParse(tBoxFin.Text, out int end) && start >= 0 && end >= 0)
             {
+                bool notEqual = start != end;
+
+                for (int i = start; i <= end; i++)
+                {
+                    if (notEqual)
+                    {
+                        xLin.Add(x[i]);
+                        yLin.Add(y[i]);
+                    }
+                }
+
                 if (notEqual)
                 {
-                    xLin.Add(x[i]);
-                    yLin.Add(y[i]);
+                    Calculate_slope(xLin.ToArray(), yLin.ToArray());
                 }
-            }
-
-            if(notEqual)
-            {
-                Calculate_slope(xLin.ToArray(), yLin.ToArray());
-            }           
+            }   
 
         }
 
@@ -288,6 +299,7 @@ namespace Sonda_Agulha
 
             for (int i = 0; i < x.Count(); i++)
             {
+                Console.WriteLine(d2ydx[i]);
                 if(d2ydx[i] < 0.1 && d2ydx[i] > -0.1) 
                 {
                     xLin.Add(x[i]);
@@ -339,6 +351,24 @@ namespace Sonda_Agulha
             }
 
             return dydx;
+        }
+
+
+        private bool Show_connection_error(string message)
+        {
+            timerPortas.Enabled = false;
+            DialogResult result = MessageBox.Show(message, "Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+
+            if (result == DialogResult.Retry)
+            {
+                timerPortas.Enabled = true;
+                return true;
+            }
+            else
+            {
+                Environment.Exit(1);
+                return false;
+            }
         }
 
     }
