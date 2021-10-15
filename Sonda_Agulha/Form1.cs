@@ -26,6 +26,9 @@ namespace Sonda_Agulha
         string dataIn; //Dado recebido do arduino
         int cont_plot = 0; //Marca o "tempo" para plotar
 
+        bool new_file = true; //Para a gravação dos pontos
+        string file_path = @"C:\Users\angio\Desktop";
+
         List<double> x = new List<double>();
         List<double> y = new List<double>();
 
@@ -37,7 +40,7 @@ namespace Sonda_Agulha
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            //Teste de derivada
+           /* //Teste de derivada
 
             //Cria uma função y = f(x)
 
@@ -70,14 +73,16 @@ namespace Sonda_Agulha
                     y.Add(x[i - 40] * x[i - 40]);
                 }
 
+                Write_to_file(x[i], y[i]);
+
                 chart1.Series[0].Points.AddXY(x[i], y[i]);
                 chart1.Series[0].BorderWidth = 2;
             }
 
             var points = Find_Linear_Interval();
-            Calculate_slope(points.Item1, points.Item2);
+            Calculate_slope(points.Item1, points.Item2);*/
 
-            //Algumas configurações para ser possível a seleção manual
+            //Configurações do gráfico
             chart1.ChartAreas[0].CursorX.IsUserEnabled = false;         // red cursor at SelectionEnd
             chart1.ChartAreas[0].CursorX.IsUserSelectionEnabled = true;
             chart1.ChartAreas[0].AxisX.ScaleView.Zoomable = false;      // zoom into SelectedRange
@@ -90,7 +95,14 @@ namespace Sonda_Agulha
             serialPort1.StopBits = StopBits.One;
             serialPort1.Parity = Parity.None;
 
-            timerPortas.Enabled = false;
+            //Configuração da gravação
+            tBoxBrowse.Text = "Diretório de Gravação";
+            tBoxBrowse.ForeColor = Color.Gray;
+
+            labelConnect.Text = "Conectando...";
+            labelConnect.ForeColor = Color.Red;
+
+            timerPortas.Enabled = true;
         }
 
         //Encontra e conecta automaticamente ao Arduino
@@ -171,6 +183,8 @@ namespace Sonda_Agulha
                 //Se o Arduino mandou a palavra correta, passa a bool connected para true, e a rotina de plotar dados será executada quando chegar um novo dado
                 if (dataIn == "Connected")
                 {
+                    General_del(0, "Label");
+
                     connected = true;
                     timerPortas.Enabled = false; //Desabilita o timer de conexão de portas
                 }
@@ -180,7 +194,6 @@ namespace Sonda_Agulha
             {
                 //Quando terminar a aquisição de dados o Arduino mandará um "fim" e será calculada automaticamente e região Linear
                 //Se não, armazena e plota os dados
-
                 if (dataIn == "Fim")
                 {
                     var points = Find_Linear_Interval();
@@ -188,48 +201,75 @@ namespace Sonda_Agulha
                 }
                 else
                 {
-                    double yln = Math.Log(double.Parse(dataIn));
-                    Plot_data(yln);
-                    y.Add(yln);
-                    x.Add(cont_plot);
-                    cont_plot++;
+                    //Foi feito um try catch para debug
+                    //Quando quero ver o output do arduino que não esteja no formato de plotar, dará um erro no Parse.
+                    //Então será feito o que está no catch que é escrever no console
+
+                    try
+                    {
+                        double value = double.Parse(dataIn);
+                        if (value > 0){
+                            double yln = Math.Log(value);
+                            General_del(yln, "Plot");
+                            Write_to_file(cont_plot, yln);
+
+                            y.Add(yln);
+                            x.Add(cont_plot);
+                            cont_plot++;
+                        }
+                    }
+                    catch
+                    {
+                        Console.WriteLine(dataIn);
+                    }
                 }
             }
         }
 
         //Os dados recebidos são executados na thread da serialPort1 e os métodos de plotar, escrever nas textboxes, etc. em outra thread.
         //É necessário o método "delegate" e "CallBack" que garante que a função será executada em seu thread
-        //O thread do chart1 e textboxes é o mesmo, então são chamados na mesma função
+        //Aqui foi criado um delegate geral. Para uma nova funcionalidade que o exija, basta adicionar algo no switch case
 
-        delegate void Plot_dataCallback(double value); //Declara o método do delegate da função Plot_data
+        delegate void General_delCallback(double value, string mode); //Declara o método do delegate da função General_del
 
 
-        //Método para plotar dados e escrever nas textBox
-        private void Plot_data(double value)
+        //Método do delegate geral
+        private void General_del(double value, string mode)
         {
             if (this.chart1.InvokeRequired) //Verifica se o thread do chart1 é diferente do thread atual. Se sim, retorna true
             {
-                Plot_dataCallback d = new Plot_dataCallback(Plot_data); //Cria o método delegate e armazena na variável d
-                this.BeginInvoke(d, new object[] { value }); //Invoca esta mesma função Plot_data mas agora no thread do chart1. Com isto o InvokeRequired retornará false                
+                General_delCallback d = new General_delCallback(General_del); //Cria o método delegate e armazena na variável d
+                this.BeginInvoke(d, new object[] { value, mode }); //Invoca esta mesma função General_del mas agora no thread do formulário. Com isto o InvokeRequired retornará false                
             }
             else
             {
-                //Plota o gráfico
-                this.chart1.Series[0].Points.AddXY(cont_plot, value);
+                switch (mode)
+                {
+                    case "Plot":
+                        this.chart1.Series[0].Points.AddXY(cont_plot, value);
+                        break;
+
+                    case "Label":
+                        labelConnect.Text = "Conectado";
+                        labelConnect.ForeColor = Color.Green;
+                        break;
+
+                }
             }
         }
-
 
         //Manda o arduino iniciar o aquecimento e aquisição
         private void btnInit_Click(object sender, EventArgs e)
         {
-            serialPort1.WriteLine("Start");
+            string send_data = "Start;" + tBoxPower.Text;
+            Console.WriteLine(send_data);
+            serialPort1.WriteLine(send_data);
         }
 
         //Para o aquecimento e aquisição e calcula a inclinação
         private void btnStop_Click(object sender, EventArgs e)
         {
-            serialPort1.WriteLine("Stop");
+            serialPort1.WriteLine("Stop;");
             var points = Find_Linear_Interval();
             Calculate_slope(points.Item1, points.Item2);
         }
@@ -280,10 +320,6 @@ namespace Sonda_Agulha
         }
 
         //Faz os calculos para a seleção manual
-        private void btnCalcLine_Click(object sender, EventArgs e)
-        {
-           // Calculate_slope(int.Parse(tBoxInit.Text), int.Parse(tBoxFin.Text));
-        }
 
         private Tuple<double[], double[]> Find_Linear_Interval()
         {
@@ -353,7 +389,6 @@ namespace Sonda_Agulha
             return dydx;
         }
 
-
         private bool Show_connection_error(string message)
         {
             timerPortas.Enabled = false;
@@ -371,5 +406,52 @@ namespace Sonda_Agulha
             }
         }
 
+        private void btnBrowse_Click(object sender, EventArgs e)
+        {
+            DialogResult result = fbd1.ShowDialog();
+            file_path = fbd1.SelectedPath;
+
+            if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(file_path))
+            {
+                tBoxBrowse.Text = file_path;
+                tBoxBrowse.ForeColor = Color.Black;
+
+                if (!File.Exists(file_path + @"\data.csv"))
+                {
+                    File.Create(file_path + @"\data.csv");
+                    new_file = true;
+                }
+            }
+        }
+
+        private void tBoxBrowse_MouseClick(object sender, MouseEventArgs e)
+        {
+            tBoxBrowse.ForeColor = Color.Black;
+            tBoxBrowse.Text = "";
+        }
+
+        private void Write_to_file(double x, double y)
+        {
+            string write_data = "";
+
+            if (new_file)
+            {
+                try
+                {
+                    File.AppendAllText(file_path + @"\data.csv", "Amostra" + "," + "Temperatura");
+                    new_file = false;
+                }
+                catch { }
+            }
+            else
+            {
+                write_data += (x).ToString() + ",";
+                write_data += (y).ToString();
+
+                try { File.AppendAllText(file_path + @"\data.csv", write_data + "\n"); }
+                catch { }
+            }
+
+        }
     }
 }

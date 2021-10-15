@@ -47,8 +47,21 @@ namespace Sonda_Agulha
             this.tBoxInit = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.btnStop = new System.Windows.Forms.Button();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.label5 = new System.Windows.Forms.Label();
+            this.tBoxPower = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.btnBrowse = new System.Windows.Forms.Button();
+            this.tBoxBrowse = new System.Windows.Forms.TextBox();
+            this.fbd1 = new System.Windows.Forms.FolderBrowserDialog();
+            this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.labelConnect = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.groupBox1.SuspendLayout();
+            this.groupBox2.SuspendLayout();
+            this.groupBox3.SuspendLayout();
+            this.groupBox4.SuspendLayout();
             this.SuspendLayout();
             // 
             // chart1
@@ -91,7 +104,7 @@ namespace Sonda_Agulha
             // 
             // btnInit
             // 
-            this.btnInit.Location = new System.Drawing.Point(26, 28);
+            this.btnInit.Location = new System.Drawing.Point(6, 19);
             this.btnInit.Name = "btnInit";
             this.btnInit.Size = new System.Drawing.Size(75, 23);
             this.btnInit.TabIndex = 1;
@@ -101,15 +114,15 @@ namespace Sonda_Agulha
             // 
             // tBox_m
             // 
-            this.tBox_m.Location = new System.Drawing.Point(158, 31);
+            this.tBox_m.Location = new System.Drawing.Point(36, 19);
             this.tBox_m.Name = "tBox_m";
-            this.tBox_m.Size = new System.Drawing.Size(37, 20);
+            this.tBox_m.Size = new System.Drawing.Size(45, 20);
             this.tBox_m.TabIndex = 2;
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(128, 34);
+            this.label1.Location = new System.Drawing.Point(6, 22);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(24, 13);
             this.label1.TabIndex = 3;
@@ -121,9 +134,9 @@ namespace Sonda_Agulha
             this.groupBox1.Controls.Add(this.tBoxFin);
             this.groupBox1.Controls.Add(this.tBoxInit);
             this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Location = new System.Drawing.Point(466, 351);
+            this.groupBox1.Location = new System.Drawing.Point(334, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(110, 75);
+            this.groupBox1.Size = new System.Drawing.Size(110, 88);
             this.groupBox1.TabIndex = 4;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Seleção Manual";
@@ -162,7 +175,7 @@ namespace Sonda_Agulha
             // 
             // btnStop
             // 
-            this.btnStop.Location = new System.Drawing.Point(26, 57);
+            this.btnStop.Location = new System.Drawing.Point(88, 19);
             this.btnStop.Name = "btnStop";
             this.btnStop.Size = new System.Drawing.Size(75, 23);
             this.btnStop.TabIndex = 5;
@@ -170,22 +183,118 @@ namespace Sonda_Agulha
             this.btnStop.UseVisualStyleBackColor = true;
             this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
             // 
+            // groupBox2
+            // 
+            this.groupBox2.Controls.Add(this.label5);
+            this.groupBox2.Controls.Add(this.tBoxPower);
+            this.groupBox2.Controls.Add(this.label4);
+            this.groupBox2.Controls.Add(this.btnInit);
+            this.groupBox2.Controls.Add(this.btnStop);
+            this.groupBox2.Location = new System.Drawing.Point(12, 12);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(176, 88);
+            this.groupBox2.TabIndex = 6;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "Ensaio";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(63, 60);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(18, 13);
+            this.label5.TabIndex = 8;
+            this.label5.Text = "W";
+            // 
+            // tBoxPower
+            // 
+            this.tBoxPower.Location = new System.Drawing.Point(36, 57);
+            this.tBoxPower.Name = "tBoxPower";
+            this.tBoxPower.Size = new System.Drawing.Size(24, 20);
+            this.tBoxPower.TabIndex = 6;
+            this.tBoxPower.Text = "1";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(6, 60);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(23, 13);
+            this.label4.TabIndex = 7;
+            this.label4.Text = "P =";
+            // 
+            // groupBox3
+            // 
+            this.groupBox3.Controls.Add(this.btnBrowse);
+            this.groupBox3.Controls.Add(this.tBoxBrowse);
+            this.groupBox3.Location = new System.Drawing.Point(12, 125);
+            this.groupBox3.Name = "groupBox3";
+            this.groupBox3.Size = new System.Drawing.Size(262, 50);
+            this.groupBox3.TabIndex = 7;
+            this.groupBox3.TabStop = false;
+            this.groupBox3.Text = "Local de Gravação";
+            // 
+            // btnBrowse
+            // 
+            this.btnBrowse.Location = new System.Drawing.Point(169, 15);
+            this.btnBrowse.Name = "btnBrowse";
+            this.btnBrowse.Size = new System.Drawing.Size(75, 23);
+            this.btnBrowse.TabIndex = 1;
+            this.btnBrowse.Text = "Browse";
+            this.btnBrowse.UseVisualStyleBackColor = true;
+            this.btnBrowse.Click += new System.EventHandler(this.btnBrowse_Click);
+            // 
+            // tBoxBrowse
+            // 
+            this.tBoxBrowse.Location = new System.Drawing.Point(7, 18);
+            this.tBoxBrowse.Name = "tBoxBrowse";
+            this.tBoxBrowse.Size = new System.Drawing.Size(156, 20);
+            this.tBoxBrowse.TabIndex = 0;
+            this.tBoxBrowse.MouseClick += new System.Windows.Forms.MouseEventHandler(this.tBoxBrowse_MouseClick);
+            // 
+            // groupBox4
+            // 
+            this.groupBox4.Controls.Add(this.tBox_m);
+            this.groupBox4.Controls.Add(this.label1);
+            this.groupBox4.Location = new System.Drawing.Point(206, 12);
+            this.groupBox4.Name = "groupBox4";
+            this.groupBox4.Size = new System.Drawing.Size(110, 88);
+            this.groupBox4.TabIndex = 8;
+            this.groupBox4.TabStop = false;
+            this.groupBox4.Text = "Resultados";
+            // 
+            // labelConnect
+            // 
+            this.labelConnect.AutoSize = true;
+            this.labelConnect.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelConnect.Location = new System.Drawing.Point(15, 190);
+            this.labelConnect.Name = "labelConnect";
+            this.labelConnect.Size = new System.Drawing.Size(96, 17);
+            this.labelConnect.TabIndex = 9;
+            this.labelConnect.Text = "Conectando...";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1159, 450);
-            this.Controls.Add(this.btnStop);
+            this.ClientSize = new System.Drawing.Size(1135, 351);
+            this.Controls.Add(this.labelConnect);
+            this.Controls.Add(this.groupBox4);
+            this.Controls.Add(this.groupBox3);
+            this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.tBox_m);
-            this.Controls.Add(this.btnInit);
             this.Controls.Add(this.chart1);
             this.Name = "Form1";
             this.Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).EndInit();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
+            this.groupBox3.ResumeLayout(false);
+            this.groupBox3.PerformLayout();
+            this.groupBox4.ResumeLayout(false);
+            this.groupBox4.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -205,6 +314,16 @@ namespace Sonda_Agulha
         private System.Windows.Forms.TextBox tBoxInit;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button btnStop;
+        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.Button btnBrowse;
+        private System.Windows.Forms.TextBox tBoxBrowse;
+        private System.Windows.Forms.FolderBrowserDialog fbd1;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.TextBox tBoxPower;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.GroupBox groupBox4;
+        private System.Windows.Forms.Label labelConnect;
     }
 }
 

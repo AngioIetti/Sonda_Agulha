@@ -1,23 +1,35 @@
+#include <Arduino.h>
 #include <SPI.h> //necessário para o ADS1248
 #include <math.h>
 
 /*********** definições de constantes do programa *******************/
 #define ADS1248_NCANAIS 4
 
-int ADS_INTERVALO = 250; // minimo 
+//Configurações das portas
 const uint8_t LED_STATUS = 13; //led da própria placa
 const uint8_t ADS_SLAVE_SELECT = 8;// 10: UNO, 53=DUE saulo
+const uint8_t PWM_port = 5;
+
 //Instead of one Chip Select (SS) pin, the Due supports three.  These are hardware Digital Pin 10 (SPI-CS0), Digital Pin 4 (SPI-CS1) and Digital 52 (SPI-CS2).  
 //These pin values are used in the Due SPI library calls to determine which hardware SPI device you are addressing (up to three at the same time).
 
+//Configurações do aquecimento
+double P_heating; //Potência inserida pelo usuário no visual
+double V_heating = 10.0; //Tensão que alimenta o fio
+double R_wire = 1.0; //Resistência do fio
+double L_wire = 0.1; //Comprimento do fio em metros
+int PWM_value = 0; //PWM que controla a potência
 
+//Configurações da comunicação com o visual
 bool send_data = false;
 String received_data;
 
+//Configurações do timer
 long long tempo_ms = 0;
 long long tempo_ms_anterior = 0;
 
-//variaveis do ads1248 
+//Configurações do ads1248 
+int ADS_INTERVALO = 250; // minimo 
 double ads1248_ganhoCanal[4]; //vetor de configuração de ganho por canal
 float ADS_V0, ADS_V1, ADS_V2, ADS_V3; //4 canais com 8 entradas diferenciais
 
@@ -43,7 +55,12 @@ void ads1248_ajuste_ganho(uint8_t canal);
 double ads1248_ler_amplificador(uint8_t canal);
 bool ads1248_ajustar_canal_ganho(int MUX_SP, int MUX_SN, int PGA);
 double ads1248_ler(int ganho);
+
+//Protótipo de funções para compilar corretamente
+String getValue(String, char, int);
+
 //====================================================================================================
+
 void setup() 
 {
 
@@ -51,6 +68,7 @@ void setup()
   Serial.begin(9600);
 
   pinMode(LED_STATUS, OUTPUT);
+  pinMode(PWM_port, OUTPUT);
   digitalWrite(LED_STATUS, LOW);
 
   ads1248_ganhoCanal[0] = 4;  //2 elev 4 = 16 (datasheet)
@@ -73,98 +91,104 @@ void setup()
 void loop() 
 {
   if(Serial.available()){
-      received_data = Serial.readString(); //Lê a string recebida
+    received_data = Serial.readString(); //Lê a string recebida
       
-      if(received_data == "Connect\n"){
-        Serial.println("Connected");
-      }
-      else if(received_data == "Start\n"){
+    if(received_data == "Connect\n"){
+      Serial.println("Connected");
+    } 
+    else{
+      String mode = getValue(received_data, ';', 0);
+        
+      if(mode == "Start"){
+        P_heating = getValue(received_data, ';', 1).toDouble();        
+        PWM_value = round((P_heating / ((V_heating * V_heating) / R_wire)) * 255);
+
+        analogWrite(PWM_port, PWM_value);
         send_data = true;
       }
-      else if(received_data == "Stop\n"){
+      else if(mode == "Stop"){
         send_data = false;
       }
+    }
   }
 
   
   tempo_ms = millis();
 
-  if ((tempo_ms - tempo_ms_anterior) >= ADS_INTERVALO)
-  {
-       tempo_ms_anterior = tempo_ms;
+  if ((tempo_ms - tempo_ms_anterior) >= ADS_INTERVALO){
+    tempo_ms_anterior = tempo_ms;
        
-       switch (estado_atual) 
-       {
+    switch (estado_atual) {
 
-        case AJUSTE_GANHO_CH0:
-        //delay(1000);
-        ads1248_ajuste_ganho(0); 
-       // Serial.print("1");
-        estado_atual = LEITURA_CH0;
-        break;
+      case AJUSTE_GANHO_CH0:
+      //delay(1000);
+      ads1248_ajuste_ganho(0); 
+      // Serial.print("1");
+      estado_atual = LEITURA_CH0;
+      break;
 
-        case LEITURA_CH0:
-        ADS_V0 = ads1248_ler_amplificador(0);
-        if(send_data){Serial.println(ADS_V0);}
-        //Serial.print("2");
-        //estado_atual = AJUSTE_GANHO_CH1;
-        estado_atual = AJUSTE_GANHO_CH0;
-        break;
+      case LEITURA_CH0:
+      ADS_V0 = ads1248_ler_amplificador(0);
+      if(send_data){Serial.println(PWM_value);}
+      //Serial.print("2");
+      //estado_atual = AJUSTE_GANHO_CH1;
+      estado_atual = AJUSTE_GANHO_CH0;
+      break;
 
-        case AJUSTE_GANHO_CH1:
-        ads1248_ajuste_ganho(1); 
-        //Serial.print("3");
-        estado_atual = LEITURA_CH1;
-        break;
+      case AJUSTE_GANHO_CH1:
+      ads1248_ajuste_ganho(1); 
+      //Serial.print("3");
+      estado_atual = LEITURA_CH1;
+      break;
 
-        case LEITURA_CH1:
-        ADS_V1 = ads1248_ler_amplificador(1);
-        //Serial.print("4");
-        estado_atual = AJUSTE_GANHO_CH2;
-        break;
+      case LEITURA_CH1:
+      ADS_V1 = ads1248_ler_amplificador(1);
+      //Serial.print("4");
+      estado_atual = AJUSTE_GANHO_CH2;
+      break;
 
-        case AJUSTE_GANHO_CH2:
-        ads1248_ajuste_ganho(2); 
-        //Serial.print("5");
-        estado_atual = LEITURA_CH2;
-        break;
+      case AJUSTE_GANHO_CH2:
+      ads1248_ajuste_ganho(2); 
+      //Serial.print("5");
+      estado_atual = LEITURA_CH2;
+      break;
 
-        case LEITURA_CH2:
-        ADS_V2 = ads1248_ler_amplificador(2);
-       // Serial.print("6");
-        estado_atual = AJUSTE_GANHO_CH3;
-        break;
+      case LEITURA_CH2:
+      ADS_V2 = ads1248_ler_amplificador(2);
+      // Serial.print("6");
+      estado_atual = AJUSTE_GANHO_CH3;
+      break;
 
-        case AJUSTE_GANHO_CH3:
-        ads1248_ajuste_ganho(3); 
-        //Serial.print("7");
-        estado_atual = LEITURA_CH3;
-        break;
+      case AJUSTE_GANHO_CH3:
+      ads1248_ajuste_ganho(3); 
+      //Serial.print("7");
+      estado_atual = LEITURA_CH3;
+      break;
 
-        case LEITURA_CH3:
-        ADS_V3 = ads1248_ler_amplificador(3);
-        //Serial.print("8");
-        estado_atual = MOSTRA_DADOS;
-        break;
+      case LEITURA_CH3:
+      ADS_V3 = ads1248_ler_amplificador(3);
+      //Serial.print("8");
+      estado_atual = MOSTRA_DADOS;
+      break;
 
 
-       case MOSTRA_DADOS:
+      case MOSTRA_DADOS:
 
-        Serial.print("Ch0: ");
-        Serial.print(ADS_V0);
-        Serial.print("     Ch1: ");
-        Serial.print(ADS_V1);
-        Serial.print("     Ch2: ");
-        Serial.print(ADS_V2);
-        Serial.print("     Ch3: ");
-        Serial.println(ADS_V3);
+      Serial.print("Ch0: ");
+      Serial.print(ADS_V0);
+      Serial.print("     Ch1: ");
+      Serial.print(ADS_V1);
+      Serial.print("     Ch2: ");
+      Serial.print(ADS_V2);
+      Serial.print("     Ch3: ");
+      Serial.println(ADS_V3);
 
-        estado_atual = AJUSTE_GANHO_CH0;
-        break;
+      estado_atual = AJUSTE_GANHO_CH0;
+      break;
 
       default:
       break;
-      }
+    }
 
   }
 }
@@ -181,6 +205,26 @@ void SPI_init()   //* Init SPI interface*/
     
     SPI.setDataMode(SPI_MODE1);
     SPI.setClockDivider(84);
+}
+
+//====================================================================================================
+
+//Pega o valor correspondente à variável "index" de uma string "data" com delimitadores "separator"
+String getValue(String data, char separator, int index)
+{
+  int found = 0;
+  int strIndex[] = {0, -1};
+  int maxIndex = data.length()-1;
+
+  for(int i=0; i<=maxIndex && found<=index; i++){
+    if(data.charAt(i)==separator || i==maxIndex){
+        found++;
+        strIndex[0] = strIndex[1]+1;
+        strIndex[1] = (i == maxIndex) ? i+1 : i;
+    }
+  }
+
+  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
 //====================================================================================================
@@ -208,13 +252,11 @@ void ads1248_clear() /* clear ads1248 registers */
 void ads1248_ajuste_ganho(uint8_t canal) /* clear ads1248 registers */
 {
   int canal_positivo_ads1248, canal_negativo_ads1248;
-  bool scratch_ads1248; //aparentemente eh uma variavel sem uso
-
 
   canal_positivo_ads1248 = canal * 2;
   canal_negativo_ads1248 = (canal * 2) + 1;
  
-  scratch_ads1248 = ads1248_ajustar_canal_ganho(canal_positivo_ads1248, canal_negativo_ads1248, ads1248_ganhoCanal[canal]);
+  ads1248_ajustar_canal_ganho(canal_positivo_ads1248, canal_negativo_ads1248, ads1248_ganhoCanal[canal]);
     
   //return temp_ADS_V;
   //return;

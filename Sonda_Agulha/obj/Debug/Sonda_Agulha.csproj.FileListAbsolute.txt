@@ -21,6 +21,5 @@ C:\Users\angio\Desktop\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Ag
 C:\Users\angio\Desktop\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.Properties.Resources.resources
 C:\Users\angio\Desktop\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.csproj.GenerateResource.cache
 C:\Users\angio\Desktop\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.csproj.CoreCompileInputs.cache
-C:\Users\angio\Desktop\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.csproj.CopyComplete
 C:\Users\angio\Desktop\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.exe
 C:\Users\angio\Desktop\Estagio-LMPT\Sonda_Agulha\Sonda_Agulha\obj\Debug\Sonda_Agulha.pdb
